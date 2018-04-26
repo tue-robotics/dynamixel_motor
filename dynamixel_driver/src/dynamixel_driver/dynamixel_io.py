@@ -52,6 +52,7 @@ from dynamixel_const import *
 
 exception = None
 
+
 class DynamixelIO(object):
     """ Provides low level IO with the Dynamixel servos through pyserial. Has the
     ability to write instruction packets, request and read register value
@@ -101,6 +102,9 @@ class DynamixelIO(object):
         except Exception, e:
             raise DroppedPacketError('Invalid response received from motor %d. %s' % (servo_id, e))
 
+        if not servo_id == data[2]:  # should be servo_id
+                raise NonMatchingReplierIdError(servo_id, data[2])
+
         # verify checksum
         checksum = 255 - sum(data[2:-1]) % 256
         if not checksum == data[-1]: raise ChecksumError(servo_id, data, checksum)
@@ -136,10 +140,13 @@ class DynamixelIO(object):
             time.sleep(0.0013)#0.00235)
 
             # read response
-            data = self.__read_response(servo_id)
-            data.append(timestamp)
+            try:
+                data = self.__read_response(servo_id)
+                data.append(timestamp)
+            except Exception as e:
+                data = []
 
-        return data
+            return data
 
     def write(self, servo_id, address, data):
         """ Write the values from the "data" list to the servo with "servo_id"
@@ -175,8 +182,11 @@ class DynamixelIO(object):
             time.sleep(0.0013)
 
             # read response
-            data = self.__read_response(servo_id)
-            data.append(timestamp)
+            try:
+                data = self.__read_response(servo_id)
+                data.append(timestamp)
+            except Exception as e:
+                data = []
 
         return data
 
@@ -1065,3 +1075,11 @@ class UnsupportedFeatureError(Exception):
     def __str__(self):
         return self.message
 
+
+class NonMatchingReplierIdError(Exception):
+    def __init(self, expected_id, received_id):
+        Exception.__init__(self)
+        self.message = "Requested status from id: {}, received status from id: {}".format(expected_id, received_id)
+
+    def __str__(self):
+        return self.message
