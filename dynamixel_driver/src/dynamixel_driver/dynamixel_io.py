@@ -146,7 +146,7 @@ class DynamixelIO(object):
             except Exception as e:
                 data = []
 
-            return data
+        return data
 
     def write(self, servo_id, address, data):
         """ Write the values from the "data" list to the servo with "servo_id"
